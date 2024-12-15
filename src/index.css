@@ -1,1 +1,62 @@
+html {
+  scroll-behavior: smooth;
+}
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: "Roboto", sans-serif;
+  /* margin: 0 2rem;
+  padding: 2rem 0; */
+}
+
+.header {
+  position: fixed;
+  background-color: rgb(49, 105, 105);
+  height: 100px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  margin: 0 auto;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+}
+
+.header .identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateX(0); /* Initial position */
+}
+
+ul li.MuiListItem-root .MuiLink-root.active {
+  color: rgb(49, 235, 105); /* A bright color to highlight the active state */
+  font-weight: bold; /* Make the active link stand out */
+  text-decoration: underline; /* Keep underline for consistency */
+  text-decoration-thickness: 2px; /* Thicker underline for emphasis */
+  text-decoration-color: rgb(
+    49,
+    235,
+    105
+  ); /* Match the underline color with the text */
+  --Link-underlineColor: rgb(49, 235, 105); /* Adjust transparency */
+}
+
+li.MuiListItem-root {
+  text-align: center;
+  justify-content: center;
+}
+li.MuiListItem-padding {
+  padding: 0;
+}
