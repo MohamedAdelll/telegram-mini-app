@@ -35,7 +35,6 @@ function Main() {
                 ?.querySelectorAll("a")
                 .forEach((link) => link.classList.remove("active"));
               link.classList.add("active");
-              console.log("link is now active", link);
             }
           }
         });
