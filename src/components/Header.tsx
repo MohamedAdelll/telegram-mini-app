@@ -8,9 +8,9 @@ import { Link, ListItem, Typography } from "@mui/material";
 import useViewportWidth from "../hooks/useViewportWidth";
 
 export default function Header() {
-  const headerRef = useRef(null);
-  const listItemsRef = useRef<HTMLUListElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const headerTextRef = useRef<HTMLDivElement>(null);
+  const listItemsRef = useRef<HTMLUListElement>(null);
 
   const [headerTextWidth, setHeaderTextWidth] = useState(0);
   const [listItemsWidth, setListItemsWidth] = useState(0);
