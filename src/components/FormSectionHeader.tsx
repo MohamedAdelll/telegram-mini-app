@@ -1,4 +1,4 @@
-import { Avatar, Divider, Typography } from "@mui/material";
+import { Avatar, Container, Divider, Typography } from "@mui/material";
 
 export default function FormSectionHeader({
   Icon,
@@ -10,7 +10,7 @@ export default function FormSectionHeader({
   subtitle: string;
 }) {
   return (
-    <>
+    <Container>
       <Typography variant="h2" sx={{ color: "text.primary" }}>
         <Avatar
           sx={{
@@ -25,6 +25,6 @@ export default function FormSectionHeader({
         {subtitle}
       </Typography>
       <Divider sx={{ marginBottom: "1rem" }} />
-    </>
+    </Container>
   );
 }

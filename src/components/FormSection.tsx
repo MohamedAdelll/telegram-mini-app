@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Container } from "@mui/material";
 
 export default function FormSection({
   children,
@@ -8,7 +8,7 @@ export default function FormSection({
   id: string;
 }) {
   return (
-    <Box
+    <Container
       id={id}
       sx={{
         bgcolor: "primary.light",
@@ -20,6 +20,6 @@ export default function FormSection({
       }}
     >
       {children}
-    </Box>
+    </Container>
   );
 }

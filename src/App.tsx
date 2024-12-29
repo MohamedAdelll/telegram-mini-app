@@ -22,6 +22,7 @@ import {
   Slider,
   TextField,
 } from "@mui/material";
+import { init, retrieveLaunchParams } from "@telegram-apps/sdk";
 
 import FormInput from "./components/FormInput";
 import FormSection from "./components/FormSection";
@@ -40,10 +41,19 @@ import {
 } from "./constants/options";
 import { SelectMenuProps } from "./constants/styles";
 
+console.log(window.parent !== window);
+if (window.parent !== window) init();
+
 const filter = createFilterOptions<{
   title: string;
   inputValue: string | undefined;
 }>({ ignoreCase: false });
+
+let initDataRaw = "";
+if (window.parent !== window) {
+  ({ initDataRaw = "" } = retrieveLaunchParams());
+  console.log(retrieveLaunchParams());
+}
 
 export default function App() {
   const {
@@ -51,6 +61,7 @@ export default function App() {
     handleSubmit,
     watch,
     control,
+    setError,
     formState: { errors },
   } = useForm({
     defaultValues: formDefaultValues,
@@ -64,8 +75,32 @@ export default function App() {
   return (
     <>
       <form
-        onSubmit={handleSubmit((data) => {
-          console.log(data);
+        onSubmit={handleSubmit(async (data) => {
+          console.log(initDataRaw);
+          const response = await fetch("http://localhost:3214/tracker/", {
+            method: "POST",
+            body: JSON.stringify({ filters: data }),
+            headers: {
+              authorization: `tma ${initDataRaw}`,
+              "Content-Type": "application/json",
+            },
+          });
+          const responseData = await response.json();
+
+          if (Array.isArray(responseData.errors)) {
+            responseData.errors.forEach(
+              (error: { field: string; message: string }) => {
+                setError(
+                  error.field as keyof typeof formDefaultValues,
+                  {
+                    message: error.message,
+                  },
+                  { shouldFocus: true }
+                );
+              }
+            );
+          }
+          console.log(response, responseData);
         })}
         style={{
           width: "100%",
@@ -78,15 +113,13 @@ export default function App() {
       >
         <FormSection id="intro-section">
           <FormInput
-            label="Feed Name"
-            helperText={
-              errors.feedName?.message ? `${errors.feedName?.message}` : ""
-            }
-            error={Boolean(errors.feedName)}
+            label="Tracker Name"
+            helperText={errors.trackerName?.message ?? ""}
+            error={Boolean(errors.trackerName)}
             textFieldProps={{
               placeholder: "E.g. Hourly, $10+, Frontend.",
-              inputProps: register("feedName", {
-                required: "You need to identify a name for your feed",
+              inputProps: register("trackerName", {
+                required: "You need to identify a name for your tracker",
               }),
             }}
           />
@@ -118,11 +151,16 @@ export default function App() {
             <>
               <FormInput
                 label="Min. Hourly Rate"
+                helperText={errors.minHourlyRate?.message ?? ""}
+                error={Boolean(errors.minHourlyRate)}
                 textFieldProps={{
                   placeholder: "0",
                   type: "number",
                   inputProps: {
-                    ...register("minHourlyRate", { min: 0 }),
+                    ...register("minHourlyRate", {
+                      valueAsNumber: true,
+                      min: { value: 0, message: "Minimum hourly rate is 0" },
+                    }),
                     min: 0,
                   },
                 }}
@@ -131,11 +169,16 @@ export default function App() {
               />
               <FormInput
                 label="Max. Hourly Rate"
+                helperText={errors.maxHourlyRate?.message ?? ""}
+                error={Boolean(errors.maxHourlyRate)}
                 textFieldProps={{
                   placeholder: "100",
                   type: "number",
                   inputProps: {
-                    ...register("maxHourlyRate", { min: 0 }),
+                    ...register("maxHourlyRate", {
+                      min: { value: 0, message: "Minimum value is 0" },
+                      valueAsNumber: true,
+                    }),
                     min: 0,
                   },
                 }}
@@ -149,11 +192,16 @@ export default function App() {
             <>
               <FormInput
                 label="Min. Fixed Budget"
+                helperText={errors.minFixedBudget?.message ?? ""}
+                error={Boolean(errors.minFixedBudget)}
                 textFieldProps={{
                   placeholder: "0",
                   type: "number",
                   inputProps: {
-                    ...register("minFixedBudget", { min: 0 }),
+                    ...register("minFixedBudget", {
+                      min: { value: 0, message: "Minimum value is 0" },
+                      valueAsNumber: true,
+                    }),
                     min: 0,
                   },
                 }}
@@ -161,11 +209,16 @@ export default function App() {
               />
               <FormInput
                 label="Max. Fixed Budget"
+                helperText={errors.maxFixedBudget?.message ?? ""}
+                error={Boolean(errors.maxFixedBudget)}
                 textFieldProps={{
                   placeholder: "100",
                   type: "number",
                   inputProps: {
-                    ...register("maxFixedBudget", { min: 0 }),
+                    ...register("maxFixedBudget", {
+                      min: { value: 0, message: "Minimum value is 0" },
+                      valueAsNumber: true,
+                    }),
                     min: 0,
                   },
                 }}
@@ -495,7 +548,7 @@ export default function App() {
             )}
           />
           <Controller
-            name="excludeAnyWord"
+            name="excludeAnyWords"
             control={control}
             render={({ field }) => (
               <Autocomplete
@@ -584,6 +637,10 @@ export default function App() {
           <Controller
             name="minClientRating"
             control={control}
+            rules={{
+              min: { value: 0, message: "Minimum value is 0" },
+              max: { value: 5, message: "Maximum value is 5" },
+            }}
             render={({ field }) => (
               <FormControl>
                 <FormLabel children="Min. client rating" />
@@ -617,7 +674,10 @@ export default function App() {
               placeholder: "0",
               type: "number",
               inputProps: {
-                ...register("minClientReviewsCount", { min: 0 }),
+                ...register("minClientReviewsCount", {
+                  min: { value: 0, message: "Minimum value is 0" },
+                  valueAsNumber: true,
+                }),
                 min: 0,
               },
             }}
@@ -625,6 +685,10 @@ export default function App() {
           <Controller
             name="minHireRate"
             control={control}
+            rules={{
+              min: { value: 0, message: "Minimum value is 0" },
+              max: { value: 100, message: "Maximum value is 100" },
+            }}
             render={({ field }) => (
               <FormControl>
                 <FormLabel children="Min. hire rate (%)" />
@@ -662,34 +726,63 @@ export default function App() {
             textFieldProps={{
               placeholder: "0",
               type: "number",
-              inputProps: { ...register("minNumOfHires"), min: 0 },
+              inputProps: {
+                ...register("minNumOfHires", {
+                  min: { value: 0, message: "Minimum value is 0" },
+                  valueAsNumber: true,
+                }),
+                min: 0,
+              },
             }}
           />
           <FormInput
             label="Min. total jobs"
+            helperText={errors.minTotalJobs?.message ?? ""}
+            error={Boolean(errors.minTotalJobs)}
             textFieldProps={{
               placeholder: "0",
               type: "number",
-              inputProps: { ...register("minTotalJobs"), min: 0 },
+              inputProps: {
+                ...register("minTotalJobs", {
+                  min: { value: 0, message: "Minimum value is 0" },
+                  valueAsNumber: true,
+                }),
+                min: 0,
+              },
             }}
           />
           <FormInput
             label="Min. total spent"
+            helperText={errors.minTotalSpent?.message ?? ""}
+            error={Boolean(errors.minTotalSpent)}
             startAdornment="$"
             textFieldProps={{
               placeholder: "0",
               type: "number",
-              inputProps: { ...register("minTotalSpent"), min: 0 },
+              inputProps: {
+                ...register("minTotalSpent", {
+                  min: { value: 0, message: "Minimum value is 0" },
+                  valueAsNumber: true,
+                }),
+                min: 0,
+              },
             }}
           />
           <FormInput
             label="Min. average hourly rate"
+            error={Boolean(errors.minAvgHourlyRate)}
             startAdornment="$"
             endAdornment="/hr"
+            helperText={errors.minAvgHourlyRate?.message ?? ""}
             textFieldProps={{
               placeholder: "0",
               type: "number",
-              inputProps: { ...register("minAvgHourlyRate"), min: 0 },
+              inputProps: {
+                ...register("minAvgHourlyRate", {
+                  min: { value: 0, message: "Minimum value is 0" },
+                }),
+                min: 0,
+              },
             }}
           />
           <Controller
@@ -755,7 +848,7 @@ export default function App() {
         <FormSection id="extraFilters-section">
           <FormSectionHeader
             title="Extra Filters"
-            subtitle="Choose the extra filters for your feed."
+            subtitle="Choose the extra filters for your tracker."
             Icon={FilterAltOutlinedIcon}
           ></FormSectionHeader>
           <FormControl>
@@ -779,6 +872,8 @@ export default function App() {
           </FormControl>
           <FormInput
             label="Featured Jobs"
+            helperText={errors.featuredJobs?.message ?? ""}
+            error={Boolean(errors.featuredJobs)}
             textFieldProps={{
               defaultValue: featuredJobs[0].value,
               select: true,
@@ -839,9 +934,15 @@ export default function App() {
           />
         </FormSection>
         {/* End of Extra filters Section*/}
-        <Button variant="contained" sx={{ padding: "0.5rem 0" }} type="submit">
-          Create New Feed
-        </Button>
+        {!!initDataRaw && (
+          <Button
+            variant="contained"
+            sx={{ padding: "0.5rem 0" }}
+            type="submit"
+          >
+            Create New Tracker
+          </Button>
+        )}
       </form>
     </>
   );

@@ -2,6 +2,12 @@ html {
   scroll-behavior: smooth;
 }
 
+html,
+body {
+  scrollbar-color: var(--tg-theme-text-color) var(--tg-theme-bg-color);
+  scrollbar-width: thin;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -19,7 +25,7 @@ html {
 
 .header {
   position: fixed;
-  background-color: rgb(49, 105, 105);
+  background-color: rgba(49, 105, 105, 0.3);
   height: 100px;
   width: 100%;
   display: flex;
@@ -30,6 +36,7 @@ html {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   margin: 0 auto;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 1000;
 }
 
@@ -40,7 +47,7 @@ html {
   transform: translateX(0); /* Initial position */
 }
 
-ul li.MuiListItem-root .MuiLink-root.active {
+.header ul li.MuiListItem-root .MuiLink-root.active {
   color: rgb(49, 235, 105); /* A bright color to highlight the active state */
   font-weight: bold; /* Make the active link stand out */
   text-decoration: underline; /* Keep underline for consistency */

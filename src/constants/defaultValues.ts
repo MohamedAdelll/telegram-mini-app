@@ -9,7 +9,7 @@ import {
 } from "./options";
 
 export const formDefaultValues = {
-  feedName: "",
+  trackerName: "",
   contractType: contractTypes[0].value,
   minHourlyRate: "",
   maxHourlyRate: "",
@@ -22,7 +22,7 @@ export const formDefaultValues = {
   excludedSkills: [],
   matchAllWords: [],
   matchAnyWords: [],
-  excludeAnyWord: [],
+  excludeAnyWords: [],
   paymentMethodVerified: true,
   minClientRating: 4.5,
   minClientReviewsCount: "",

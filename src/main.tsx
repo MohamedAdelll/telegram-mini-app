@@ -10,6 +10,7 @@ import { createRoot } from "react-dom/client";
 
 import { Box, ThemeProvider } from "@mui/material";
 
+// import { init, miniApp } from "@telegram-apps/sdk-react";
 import App from "./App.tsx";
 import Header from "./components/Header.tsx";
 import useCustomTheme from "./hooks/useThemeMode.ts";
@@ -20,9 +21,12 @@ createRoot(document.getElementById("root")!).render(<Main />);
 function Main() {
   const theme = useCustomTheme();
   const { width } = useViewportWidth();
+
   useEffect(() => {
     if (width < 551) return;
-    const sections = document.querySelectorAll(".MuiBox-root[id$='section']");
+    const sections = document.querySelectorAll(
+      ".MuiContainer-root[id$='section']"
+    );
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -43,10 +47,14 @@ function Main() {
     );
     sections.forEach((section) => observer.observe(section));
   }, [width]);
+
+  useEffect(() => {
+    document.body.style.backgroundColor = theme.palette.background.default;
+  }, [theme]);
   return (
     <ThemeProvider theme={theme}>
       <StrictMode>
-        <Box sx={{ bgcolor: "background.default" }}>
+        <Box>
           <Header />
           <App />
         </Box>

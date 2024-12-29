@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 
-import FeedRoundedIcon from "@mui/icons-material/FeedRounded";
+import TrackerRoundedIcon from "@mui/icons-material/TrackerRounded";
 import { Link, ListItem, Typography } from "@mui/material";
 
 import useViewportWidth from "../hooks/useViewportWidth";
@@ -23,23 +23,26 @@ export default function Header() {
   const { center, right, width } = useViewportWidth();
 
   // Transformations
-  const height = useTransform(scrollYProgress, [0, 1], [100, 60]);
+  const height = useTransform(scrollYProgress, [0, 1], ["14%", "8%"]);
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const identityX = useTransform(
     scrollYProgress,
     [0, 1],
-    [center(headerTextWidth), 20]
+    [center(headerTextWidth), 10]
   );
   const listItemsX = useTransform(
     scrollYProgress,
     [0, 1],
-    [right(listItemsWidth) * 5, right(listItemsWidth, 20)]
+    [width + listItemsWidth, right(listItemsWidth, 20)]
   );
 
   // Springs for smoother animations
-  const springedHeight = useSpring(height, { stiffness: 400, damping: 90 });
   const springedIdentityX = useSpring(identityX, {
     stiffness: 400,
+    damping: 90,
+  });
+  const springedListItemX = useSpring(listItemsX, {
+    stiffness: 500,
     damping: 90,
   });
 
@@ -51,7 +54,8 @@ export default function Header() {
   return (
     <motion.div
       className="header"
-      style={{ height: springedHeight }}
+      style={{ height }}
+      // style={{ height: springedHeight }}
       ref={headerRef}
     >
       <motion.div
@@ -59,7 +63,7 @@ export default function Header() {
         style={{ x: springedIdentityX }}
         className="identity"
       >
-        <FeedRoundedIcon fontSize="large" />
+        <TrackerRoundedIcon fontSize="large" />
         <motion.h1 style={{ opacity }}>Header</motion.h1>
       </motion.div>
       {width > 550 && (
@@ -68,7 +72,7 @@ export default function Header() {
           style={{
             display: "flex",
             gap: 2,
-            x: listItemsX,
+            x: springedListItemX,
             position: "absolute",
           }}
         >
