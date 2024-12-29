@@ -3,8 +3,13 @@ import { useState } from "react";
 import type { PaletteMode } from "@mui/material/styles";
 import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { on, retrieveLaunchParams, themeParams } from "@telegram-apps/sdk";
 
-// import { miniApp, useSignal } from "@telegram-apps/sdk-react";
+let initDataRaw = "";
+if (window.parent !== window) {
+  ({ initDataRaw = "" } = retrieveLaunchParams());
+  console.log(retrieveLaunchParams());
+}
 
 const theme = (mode: PaletteMode) =>
   createTheme({
@@ -50,20 +55,19 @@ const theme = (mode: PaletteMode) =>
 const useCustomTheme = () => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
-  const [themeMode, setThemeMode] = useState(() => {
-    if (!window.Telegram.WebApp.initData) {
+  const [themeMode, setThemeMode] = useState<"light" | "dark">(() => {
+    if (!initDataRaw) {
       return prefersDarkMode ? "dark" : "light";
     }
-    const { colorScheme } = window.Telegram.WebApp;
+
+    const colorScheme = themeParams.isDark() ? "dark" : "light";
+
     return colorScheme;
   });
 
-  window.Telegram.WebView.onEvent("theme_changed", (data) => {
-    if (data === "theme_changed") {
-      const { colorScheme } = window.Telegram.WebApp;
-      setThemeMode(colorScheme);
-    }
-  });
+  on("theme_changed", () =>
+    setThemeMode((prev) => (prev === "dark" ? "light" : "dark"))
+  );
 
   const customTheme = theme(themeMode);
   const responsiveTheme = responsiveFontSizes(customTheme);

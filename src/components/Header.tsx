@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 
-import TrackerRoundedIcon from "@mui/icons-material/TrackerRounded";
+import FeedRoundedIcon from "@mui/icons-material/FeedRounded";
 import { Link, ListItem, Typography } from "@mui/material";
 
 import useViewportWidth from "../hooks/useViewportWidth";
@@ -63,7 +63,7 @@ export default function Header() {
         style={{ x: springedIdentityX }}
         className="identity"
       >
-        <TrackerRoundedIcon fontSize="large" />
+        <FeedRoundedIcon fontSize="large" />
         <motion.h1 style={{ opacity }}>Header</motion.h1>
       </motion.div>
       {width > 550 && (
