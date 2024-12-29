@@ -23,6 +23,9 @@ dependencies:
   '@telegram-apps/sdk':
     specifier: ^2.11.0
     version: 2.11.0
+  framer-motion:
+    specifier: ^11.15.0
+    version: 11.15.0(react-dom@18.3.1)(react@18.3.1)
   motion:
     specifier: ^11.13.5
     version: 11.15.0(react-dom@18.3.1)(react@18.3.1)

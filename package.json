@@ -17,6 +17,7 @@
     "@mui/icons-material": "^6.2.0",
     "@mui/material": "^6.1.10",
     "@telegram-apps/sdk": "^2.11.0",
+    "framer-motion": "^11.15.0",
     "motion": "^11.13.5",
     "ngrok": "^5.0.0-beta.2",
     "react": "^18.3.1",
