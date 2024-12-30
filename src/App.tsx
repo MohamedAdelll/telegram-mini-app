@@ -6,11 +6,9 @@ import MonetizationRoundedIcon from "@mui/icons-material/MonetizationOnRounded";
 import PageviewRoundedIcon from "@mui/icons-material/PageviewRounded";
 import StarsRoundedIcon from "@mui/icons-material/StarsRounded";
 import {
-  Autocomplete,
   Button,
   Checkbox,
   Chip,
-  createFilterOptions,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -20,13 +18,17 @@ import {
   OutlinedInput,
   Select,
   Slider,
-  TextField,
+  Typography,
 } from "@mui/material";
 import { init, retrieveLaunchParams } from "@telegram-apps/sdk";
 
+import FormAutoComplete from "./components/FormAutoComplete";
+import FormAutoCompleteFreeSolo from "./components/FormAutoCompleteFreeSolo";
+import FormCheckbox from "./components/FormCheckbox";
 import FormInput from "./components/FormInput";
 import FormSection from "./components/FormSection";
 import FormSectionHeader from "./components/FormSectionHeader";
+import FormSelect from "./components/FormSelect";
 import { formDefaultValues } from "./constants/defaultValues";
 import {
   categories,
@@ -40,14 +42,12 @@ import {
   ongoingProject,
 } from "./constants/options";
 import { SelectMenuProps } from "./constants/styles";
+import useFetch from "./hooks/useFetch";
+
+const serverUrl = "http://localhost:3214";
 
 console.log(window.parent !== window);
 if (window.parent !== window) init();
-
-const filter = createFilterOptions<{
-  title: string;
-  inputValue: string | undefined;
-}>({ ignoreCase: false });
 
 let initDataRaw = "";
 if (window.parent !== window) {
@@ -55,17 +55,37 @@ if (window.parent !== window) {
   console.log(retrieveLaunchParams());
 }
 
+let trackerId = "";
+const params = new URL(window.location.href).searchParams;
+for (const param of params) {
+  const params = Object.fromEntries([param]);
+  if (params.trackerId) {
+    trackerId = params.trackerId;
+  }
+}
+
 export default function App() {
+  const { response } = useFetch<{ data: ITracker }>(
+    `${serverUrl}/tracker/${trackerId}`,
+    {
+      headers: { authorization: `tma ${initDataRaw}` },
+    }
+  );
   const {
     register,
     handleSubmit,
     watch,
     control,
     setError,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: formDefaultValues,
+    values: response?.data?.filters,
   });
+
+  const values = getValues();
+  console.log(values);
 
   const [
     contractTypeState,
@@ -77,14 +97,17 @@ export default function App() {
       <form
         onSubmit={handleSubmit(async (data) => {
           console.log(initDataRaw);
-          const response = await fetch("http://localhost:3214/tracker/", {
-            method: "POST",
-            body: JSON.stringify({ filters: data }),
-            headers: {
-              authorization: `tma ${initDataRaw}`,
-              "Content-Type": "application/json",
-            },
-          });
+          const response = await fetch(
+            `${serverUrl}/tracker/${trackerId ? trackerId : ""}`,
+            {
+              method: trackerId ? "PATCH" : "POST",
+              body: JSON.stringify({ filters: data }),
+              headers: {
+                authorization: `tma ${initDataRaw}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
           const responseData = await response.json();
 
           if (Array.isArray(responseData.errors)) {
@@ -100,7 +123,7 @@ export default function App() {
               }
             );
           }
-          console.log(response, responseData);
+          console.log({ response, responseData });
         })}
         style={{
           width: "100%",
@@ -131,21 +154,12 @@ export default function App() {
             title="Budget"
             subtitle="Choose the budget of your contracts."
           />
-          <FormInput
+          <FormSelect
+            control={control}
+            name="contractType"
             label="Contract Type"
-            textFieldProps={{
-              defaultValue: contractTypes[0].value,
-              select: true,
-              inputProps: register("contractType"),
-              children: contractTypes.map((option) => (
-                <MenuItem
-                  value={option.value}
-                  key={option.value}
-                  children={option.label}
-                />
-              )),
-            }}
-            helperText="Select the type of contract."
+            helperText="You will get job notifications based on the selected contract type."
+            options={contractTypes}
           />
           {contractTypeState !== "FixedPrice" && (
             <>
@@ -235,33 +249,14 @@ export default function App() {
             title="Job Preferences"
             subtitle="Choose the preferences of the jobs you want to be notified with."
           />
-          <Controller
-            name="categories"
+          <FormAutoComplete
             control={control}
-            render={({ field }) => {
-              return (
-                <Autocomplete
-                  fullWidth
-                  autoComplete
-                  multiple
-                  options={categories}
-                  openOnFocus
-                  noOptionsText="No categories found"
-                  onChange={(_, value) => field.onChange(value)}
-                  renderInput={(params) => (
-                    <TextField
-                      label="Categories"
-                      name={field.name}
-                      helperText="Choose the categories for the job."
-                      {...params}
-                      onBlur={field.onBlur}
-                      value={field.value}
-                    />
-                  )}
-                />
-              );
-            }}
-          ></Controller>
+            options={categories}
+            noOptionsText="No categories selected"
+            name="categories"
+            label="Categories"
+            helperText="Choose the categories for the job"
+          />
           <Controller
             name="experienceLevel"
             control={control}
@@ -298,142 +293,25 @@ export default function App() {
               </FormControl>
             )}
           ></Controller>
-          <FormInput
-            label="Hours to work per week"
-            textFieldProps={{
-              select: true,
-              inputProps: register("hoursToWorkPerWeek"),
-              defaultValue: hoursToWorkPerWeek[0].value,
-              children: hoursToWorkPerWeek.map((option) => (
-                <MenuItem
-                  value={option.value}
-                  key={option.value}
-                  children={option.label}
-                />
-              )),
-            }}
+          <FormSelect
+            control={control}
+            name="hoursToWorkPerWeek"
+            label="Hours to Work Per Week"
+            helperText="You will get job notifications based on the selected hours to work per week."
+            options={hoursToWorkPerWeek}
           />
-          <Controller
+          <FormAutoCompleteFreeSolo
+            control={control}
             name="requiredSkills"
+            label="Required Skills"
+            helperText="You will get job notifications if it requires any of the selected skills."
+          />
+          <FormAutoCompleteFreeSolo
             control={control}
-            render={({ field }) => (
-              <Autocomplete
-                fullWidth
-                autoComplete
-                multiple
-                freeSolo
-                openOnFocus
-                options={
-                  [] as { inputValue: string | undefined; title: string }[]
-                }
-                getOptionLabel={(option) => {
-                  if (typeof option === "string") {
-                    return option;
-                  }
-                  if (option.inputValue) {
-                    return option.inputValue;
-                  }
-                  return option.title;
-                }}
-                filterOptions={(options, params) => {
-                  const filtered = filter(options, params);
-                  const { inputValue } = params;
-                  if (
-                    field.value?.some(
-                      (val: string) =>
-                        val.toLowerCase() === inputValue.toLowerCase()
-                    )
-                  ) {
-                    return filtered;
-                  } else if (inputValue !== "") {
-                    filtered.push({
-                      inputValue,
-                      title: `Add "${inputValue}"`,
-                    });
-                  }
-                  return filtered;
-                }}
-                renderOption={(props, option) => (
-                  <MenuItem {...props} key={option.title}>
-                    {option.title}
-                  </MenuItem>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    label="Required Skills"
-                    name={field.name}
-                    helperText="You will get job notifications if it requires any of the selected skills."
-                    {...params}
-                    onBlur={field.onBlur}
-                    value={field.value}
-                  />
-                )}
-                onChange={(_, value) => {
-                  const parsedValue = value.map((val) =>
-                    typeof val === "string" ? val : val.inputValue
-                  );
-                  field.onChange(parsedValue);
-                }}
-              />
-            )}
-          ></Controller>
-          <Controller
             name="excludedSkills"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                fullWidth
-                autoComplete
-                multiple
-                freeSolo
-                options={
-                  [] as { inputValue: string | undefined; title: string }[]
-                }
-                getOptionLabel={(option) => {
-                  if (typeof option === "string") {
-                    return option;
-                  }
-                  if (option.inputValue) {
-                    return option.inputValue;
-                  }
-                  return option.title;
-                }}
-                filterOptions={(options, params) => {
-                  const filtered = filter(options, params);
-                  const { inputValue } = params;
-                  if (inputValue !== "") {
-                    filtered.push({
-                      inputValue,
-                      title: `Add "${inputValue}"`,
-                    });
-                  }
-                  return filtered;
-                }}
-                renderOption={(props, option) => (
-                  <MenuItem {...props} key={option.title}>
-                    {option.title}
-                  </MenuItem>
-                )}
-                openOnFocus
-                renderInput={(params) => (
-                  <TextField
-                    label="Excluded Skills"
-                    name={field.name}
-                    helperText="You will not get job notifications if the job has any of these skills, case insensitive."
-                    {...params}
-                    onBlur={field.onBlur}
-                    value={field.value}
-                  />
-                )}
-                onChange={(_, value) => {
-                  const parsedValue = value.map((val) =>
-                    typeof val === "string" ? val : val.inputValue
-                  );
-                  field.onChange(parsedValue);
-                }}
-              />
-            )}
-          ></Controller>
+            label="Excluded Skills"
+            helperText="You will not get job notifications if it requires any of the selected skills."
+          />
         </FormSection>
         {/* End of Job Attributes Section*/}
         {/* Start of Job Parsing Section*/}
@@ -443,161 +321,23 @@ export default function App() {
             title="Job Parsing"
             subtitle="Search for words in jobs title, description or skills."
           />
-          <Controller
+          <FormAutoCompleteFreeSolo
+            control={control}
             name="matchAllWords"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                fullWidth
-                autoComplete
-                multiple
-                freeSolo
-                options={
-                  [] as { inputValue: string | undefined; title: string }[]
-                }
-                getOptionLabel={(option) => {
-                  if (typeof option === "string") {
-                    return option;
-                  }
-                  if (option.inputValue) {
-                    return option.inputValue;
-                  }
-                  return option.title;
-                }}
-                filterOptions={(options, params) => {
-                  const filtered = filter(options, params);
-                  const { inputValue } = params;
-                  if (inputValue !== "") {
-                    filtered.push({
-                      inputValue,
-                      title: `Add "${inputValue}"`,
-                    });
-                  }
-                  return filtered;
-                }}
-                renderOption={(props, option) => (
-                  <MenuItem {...props} key={option.title}>
-                    {option.title}
-                  </MenuItem>
-                )}
-                openOnFocus
-                renderInput={(params) => (
-                  <TextField
-                    label="Match All Words"
-                    name={field.name}
-                    helperText="You will get job notification if the job's description/title has a match of all the words selected here, this is case insensitive, but will not match partial words. E.g. 'react' will match 'React' but not 'ReactJS' etc."
-                    {...params}
-                    onBlur={field.onBlur}
-                    value={field.value}
-                  />
-                )}
-                onChange={(_, value) => field.onChange(value)}
-              />
-            )}
+            label="Match All Words"
+            helperText="You will get job notification if the job's description/title has a match of all of these words, this is case insensitive, but will not match partial words. E.g. 'react' will match 'React' but not 'ReactJS' etc."
           />
-          <Controller
+          <FormAutoCompleteFreeSolo
+            control={control}
             name="matchAnyWords"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                fullWidth
-                autoComplete
-                multiple
-                freeSolo
-                options={
-                  [] as { inputValue: string | undefined; title: string }[]
-                }
-                getOptionLabel={(option) => {
-                  if (typeof option === "string") {
-                    return option;
-                  }
-                  if (option.inputValue) {
-                    return option.inputValue;
-                  }
-                  return option.title;
-                }}
-                filterOptions={(options, params) => {
-                  const filtered = filter(options, params);
-                  const { inputValue } = params;
-                  if (inputValue !== "") {
-                    filtered.push({
-                      inputValue,
-                      title: `Add "${inputValue}"`,
-                    });
-                  }
-                  return filtered;
-                }}
-                renderOption={(props, option) => (
-                  <MenuItem {...props} key={option.title}>
-                    {option.title}
-                  </MenuItem>
-                )}
-                openOnFocus
-                renderInput={(params) => (
-                  <TextField
-                    label="Match Any of Words"
-                    name={field.name}
-                    helperText="You will get job notification if the job's description/title has a match of any of these words, this is case insensitive, but will not match partial words. E.g. 'react' will match 'React' but not 'ReactJS' etc."
-                    {...params}
-                    onBlur={field.onBlur}
-                    value={field.value}
-                  />
-                )}
-                onChange={(_, value) => field.onChange(value)}
-              />
-            )}
+            label="Match Any Words"
+            helperText="You will get job notification if the job's description/title has a match of any of these words, this is case insensitive, but will not match partial words."
           />
-          <Controller
-            name="excludeAnyWords"
+          <FormAutoCompleteFreeSolo
             control={control}
-            render={({ field }) => (
-              <Autocomplete
-                fullWidth
-                autoComplete
-                multiple
-                freeSolo
-                options={
-                  [] as { inputValue: string | undefined; title: string }[]
-                }
-                getOptionLabel={(option) => {
-                  if (typeof option === "string") {
-                    return option;
-                  }
-                  if (option.inputValue) {
-                    return option.inputValue;
-                  }
-                  return option.title;
-                }}
-                filterOptions={(options, params) => {
-                  const filtered = filter(options, params);
-                  const { inputValue } = params;
-                  if (inputValue !== "") {
-                    filtered.push({
-                      inputValue,
-                      title: `Add "${inputValue}"`,
-                    });
-                  }
-                  return filtered;
-                }}
-                renderOption={(props, option) => (
-                  <MenuItem {...props} key={option.title}>
-                    {option.title}
-                  </MenuItem>
-                )}
-                openOnFocus
-                renderInput={(params) => (
-                  <TextField
-                    label="Exclude Any of Words"
-                    name={field.name}
-                    helperText="You will exclude job notifications if the job's description/title has a match of any of these words, this is case insensitive, but will not match partial words."
-                    {...params}
-                    onBlur={field.onBlur}
-                    value={field.value}
-                  />
-                )}
-                onChange={(_, value) => field.onChange(value)}
-              />
-            )}
+            name="excludeAnyWords"
+            label="Exclude Any Words"
+            helperText="You will not get job notification if the job's description/title has a match of any of these words, this is case insensitive, but will not match partial words."
           />
         </FormSection>
         {/* End of Job Parsing Section*/}
@@ -608,32 +348,16 @@ export default function App() {
             title="Client Preferences"
             subtitle="Choose who you work with."
           />
-          <FormControl>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <FormLabel
-                style={{ userSelect: "none" }}
-                htmlFor="paymentMethodVerified"
-                children="Payment Method Verified"
-              />
-              <Checkbox
-                id="paymentMethodVerified"
-                {...register("paymentMethodVerified")}
-              />
-            </div>
-            <FormHelperText
-              children={
-                Math.random() > 0.5
-                  ? "You will get job notifications if the client's payment method is verified."
-                  : "You will get job notification regardless of the client's payment verification"
-              }
-            />
-          </FormControl>
+          <FormCheckbox
+            control={control}
+            name="paymentMethodVerified"
+            formLabel="Payment Method Verified"
+            formHelperText={
+              values.paymentMethodVerified
+                ? "You will get job notifications if the client's payment method is verified."
+                : "You will get job notification regardless of the client's payment verification"
+            }
+          />
           <Controller
             name="minClientRating"
             control={control}
@@ -706,7 +430,7 @@ export default function App() {
                     min={0}
                     max={100}
                     step={1}
-                    value={field.value}
+                    value={field.value ?? undefined}
                     name={field.name}
                     onChange={(_, value) =>
                       typeof value === "number" ? field.onChange(value) : null
@@ -785,62 +509,27 @@ export default function App() {
               },
             }}
           />
-          <Controller
+          <FormAutoComplete
+            control={control}
+            options={countries.filter(
+              (country) =>
+                !(excludedCountryOfClientState as string[])?.includes(country)
+            )}
+            noOptionsText="No countries selected"
             name="countryOfClient"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                sx={{ marginTop: "0.5rem" }}
-                fullWidth
-                autoComplete
-                multiple
-                options={countries.filter(
-                  (country) =>
-                    !(excludedCountryOfClientState as string[])?.includes(
-                      country
-                    )
-                )}
-                openOnFocus
-                onChange={(_, value) => field.onChange(value)}
-                renderInput={(params) => (
-                  <TextField
-                    label="Choose country of clients"
-                    name={field.name}
-                    helperText="You will get job notifications if the client is from any of the selected countries."
-                    {...params}
-                    onBlur={field.onBlur}
-                    value={field.value}
-                  />
-                )}
-              />
-            )}
+            label="Country of Clients"
+            helperText="You will get job notifications if the client is from any of the selected countries."
           />
-          <Controller
-            name="excludedCountryOfClient"
+          <FormAutoComplete
             control={control}
-            render={({ field }) => (
-              <Autocomplete
-                fullWidth
-                autoComplete
-                multiple
-                options={countries.filter(
-                  (country) =>
-                    !(countryOfClientState as string[])?.includes(country)
-                )}
-                openOnFocus
-                onChange={(_, value) => field.onChange(value)}
-                renderInput={(params) => (
-                  <TextField
-                    label="Exclude country of clients"
-                    helperText="You will not get job notifications if the client is from any of the selected countries."
-                    {...params}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    value={field.value}
-                  />
-                )}
-              />
+            options={countries.filter(
+              (country) =>
+                !(countryOfClientState as string[])?.includes(country)
             )}
+            noOptionsText="No countries selected"
+            name="excludedCountryOfClient"
+            label="Excluded Country of Clients"
+            helperText="You will not get job notifications if the client is from any of the selected countries."
           />
         </FormSection>
         {/* End of Client Preferences Section*/}
@@ -851,97 +540,65 @@ export default function App() {
             subtitle="Choose the extra filters for your tracker."
             Icon={FilterAltOutlinedIcon}
           ></FormSectionHeader>
-          <FormControl>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <FormLabel
-                style={{ userSelect: "none" }}
-                htmlFor="enterpriseClients"
-                children="Enterprise clients only"
-              />
-              <Checkbox
-                id="enterpriseClients"
-                {...register("enterpriseClients")}
-              />
-            </div>
-          </FormControl>
-          <FormInput
+          <FormCheckbox
+            control={control}
+            name="enterpriseClients"
+            formLabel="Enterprise Clients"
+            formHelperText={
+              values.enterpriseClients
+                ? "You will get job notifications if the client is an enterprise client."
+                : "You will get job notifications regardless of the client being an enterprise client."
+            }
+          />
+          <FormSelect
+            control={control}
+            name="featuredJobs"
             label="Featured Jobs"
-            helperText={errors.featuredJobs?.message ?? ""}
-            error={Boolean(errors.featuredJobs)}
-            textFieldProps={{
-              defaultValue: featuredJobs[0].value,
-              select: true,
-              inputProps: register("featuredJobs"),
-              children: featuredJobs.map((option) => (
-                <MenuItem
-                  value={option.value}
-                  key={option.value}
-                  children={option.label}
-                />
-              )),
-            }}
+            options={featuredJobs}
           />
-          <FormInput
-            label="One-time Project"
-            textFieldProps={{
-              defaultValue: oneTimeProject[0].value,
-              select: true,
-              inputProps: register("oneTimeProject"),
-              children: oneTimeProject.map((option) => (
-                <MenuItem
-                  value={option.value}
-                  key={option.value}
-                  children={option.label}
-                />
-              )),
-            }}
+          <FormSelect
+            control={control}
+            name="oneTimeProject"
+            label="One Time Project"
+            options={oneTimeProject}
           />
-          <FormInput
+          <FormSelect
+            control={control}
+            name="ongoingProject"
             label="Ongoing Project"
-            textFieldProps={{
-              defaultValue: ongoingProject[0].value,
-              select: true,
-              inputProps: register("ongoingProject"),
-              children: ongoingProject.map((option) => (
-                <MenuItem
-                  value={option.value}
-                  key={option.value}
-                  children={option.label}
-                />
-              )),
-            }}
+            options={ongoingProject}
           />
-          <FormInput
-            label="Contract to Hire"
-            textFieldProps={{
-              defaultValue: contractToHire[0].value,
-              select: true,
-              inputProps: register("contractToHireProject"),
-              children: contractToHire.map((option) => (
-                <MenuItem
-                  value={option.value}
-                  key={option.value}
-                  children={option.label}
-                />
-              )),
-            }}
+          <FormSelect
+            control={control}
+            name="contractToHireProject"
+            label="Contract to Hire Project"
+            options={contractToHire}
           />
         </FormSection>
         {/* End of Extra filters Section*/}
         {!!initDataRaw && (
-          <Button
-            variant="contained"
-            sx={{ padding: "0.5rem 0" }}
-            type="submit"
+          <div
+            style={{
+              padding: "2rem 4rem",
+              backgroundColor: "rgba(0, 0, 255, 1)",
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+            }}
           >
-            Create New Tracker
-          </Button>
+            <Button
+              variant="contained"
+              sx={{ padding: "0.5rem 0", width: "100%" }}
+              type="submit"
+              children={
+                <Typography
+                  variant="button"
+                  children={trackerId ? "Edit Tracker" : "Create New Tracker"}
+                />
+              }
+            />
+          </div>
         )}
       </form>
     </>

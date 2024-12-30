@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { PaletteMode } from "@mui/material/styles";
 import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { on, retrieveLaunchParams, themeParams } from "@telegram-apps/sdk";
+import { miniApp, on, retrieveLaunchParams } from "@telegram-apps/sdk";
 
 let initDataRaw = "";
 if (window.parent !== window) {
   ({ initDataRaw = "" } = retrieveLaunchParams());
-  console.log(retrieveLaunchParams());
 }
 
 const theme = (mode: PaletteMode) =>
@@ -53,21 +52,31 @@ const theme = (mode: PaletteMode) =>
   });
 
 const useCustomTheme = () => {
+  const lastThemeBGColorRef = useRef<string | undefined>();
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   const [themeMode, setThemeMode] = useState<"light" | "dark">(() => {
     if (!initDataRaw) {
       return prefersDarkMode ? "dark" : "light";
     }
-
-    const colorScheme = themeParams.isDark() ? "dark" : "light";
+    miniApp.mount.ifAvailable();
+    const colorScheme = miniApp.isDark() ? "dark" : "light";
+    console.log("colorScheme", colorScheme);
 
     return colorScheme;
   });
 
-  on("theme_changed", () =>
-    setThemeMode((prev) => (prev === "dark" ? "light" : "dark"))
-  );
+  on("theme_changed", (data) => {
+    console.log({ data }, "THEME_CHANGED");
+    if (data.theme_params.bg_color !== lastThemeBGColorRef.current) {
+      console.log("hanghayar", {
+        data: data.theme_params.bg_color,
+        lastThemeBGColorRef: lastThemeBGColorRef.current,
+      });
+      lastThemeBGColorRef.current = data.theme_params.bg_color;
+      setThemeMode((prev) => (prev === "dark" ? "light" : "dark"));
+    }
+  });
 
   const customTheme = theme(themeMode);
   const responsiveTheme = responsiveFontSizes(customTheme);

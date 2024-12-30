@@ -1,45 +1,41 @@
-type Option = { value: string; label: string };
-export const contractTypes: Option[] = [
+export type FormSelectOption = { value: string; label: string };
+export const contractTypes: FormSelectOption[] = [
   { value: "*", label: "Both Hourly Rate & Fixed Price" },
   { value: "Hourly", label: "Hourly Rate" },
   { value: "FixedPrice", label: "Fixed Price" },
 ] as const;
 
-export const hoursToWorkPerWeek: Option[] = [
+export const hoursToWorkPerWeek: FormSelectOption[] = [
   { value: "*", label: "Any hours per week" },
   { value: "moreThan30", label: "More than 30 Hours/week" },
   { value: "lessThan30", label: "Less than 30 Hours/week" },
 ] as const;
 
-export const featuredJobs: Option[] = [
+export const featuredJobs: FormSelectOption[] = [
   { value: "*", label: "Notify for both" },
   { value: "true", label: "Only notify for featured jobs" },
   { value: "false", label: "Only notify for not featured jobs" },
 ] as const;
 
-export const oneTimeProject: Option[] = [
+export const oneTimeProject: FormSelectOption[] = [
   { value: "*", label: "Notify for both" },
   { value: "true", label: "Only notify for one-time projects" },
   { value: "false", label: "Only notify for none one-time projects" },
 ] as const;
 
-export const ongoingProject: Option[] = [
+export const ongoingProject: FormSelectOption[] = [
   { value: "*", label: "Notify for both" },
   { value: "true", label: "Only notify for Ongoing projects" },
   { value: "false", label: "Only notify for none Ongoing projects" },
 ] as const;
 
-export const contractToHire: Option[] = [
+export const contractToHire: FormSelectOption[] = [
   { value: "*", label: "Notify for both" },
   { value: "true", label: "Only notify for Contract to hire projects" },
   { value: "false", label: "Only notify for none Contract to hire projects" },
 ] as const;
 
-export const experienceLevels = [
-  "Entry Level",
-  "Intermediate",
-  "Expert",
-] as const;
+export const experienceLevels = ["Entry Level", "Intermediate", "Expert"];
 
 export const categories = [
   "3D Modeling & CAD",

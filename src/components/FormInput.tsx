@@ -5,6 +5,7 @@ import {
   InputAdornment,
   TextField,
   TextFieldProps,
+  Typography,
 } from "@mui/material";
 
 export default function FormInput(props: {
@@ -18,7 +19,9 @@ export default function FormInput(props: {
 }) {
   return (
     <FormControl error={props.error} required={props.required}>
-      <FormLabel children={props.label} />
+      <FormLabel
+        children={<Typography variant="body2" children={props.label} />}
+      />
       <TextField
         error={props.error}
         required={props.required}
@@ -38,7 +41,9 @@ export default function FormInput(props: {
           },
         }}
       />
-      <FormHelperText children={props.helperText} />
+      <FormHelperText
+        children={<Typography variant="caption" children={props.helperText} />}
+      />
     </FormControl>
   );
 }
