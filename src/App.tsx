@@ -1,7 +1,13 @@
-import { Controller, useForm } from "react-hook-form";
+import axios from "axios";
+import eruda from "eruda";
+import {
+  Controller,
+  useForm,
+} from "react-hook-form";
 
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
-import InsertEmoticonRoundedIcon from "@mui/icons-material/InsertEmoticonRounded";
+import InsertEmoticonRoundedIcon
+  from "@mui/icons-material/InsertEmoticonRounded";
 import MonetizationRoundedIcon from "@mui/icons-material/MonetizationOnRounded";
 import PageviewRoundedIcon from "@mui/icons-material/PageviewRounded";
 import StarsRoundedIcon from "@mui/icons-material/StarsRounded";
@@ -20,7 +26,10 @@ import {
   Slider,
   Typography,
 } from "@mui/material";
-import { init, retrieveLaunchParams } from "@telegram-apps/sdk";
+import {
+  init,
+  retrieveLaunchParams,
+} from "@telegram-apps/sdk";
 
 import FormAutoComplete from "./components/FormAutoComplete";
 import FormAutoCompleteFreeSolo from "./components/FormAutoCompleteFreeSolo";
@@ -44,15 +53,21 @@ import {
 import { SelectMenuProps } from "./constants/styles";
 import useFetch from "./hooks/useFetch";
 
-const serverUrl = "http://localhost:3214";
+const serverUrl = "https://127.0.0.1:3214";
 
-console.log(window.parent !== window);
-if (window.parent !== window) init();
+eruda.init();
+
+try {
+  init();
+} catch (error) {
+  console.log("wow", error);
+}
 
 let initDataRaw = "";
-if (window.parent !== window) {
+try {
   ({ initDataRaw = "" } = retrieveLaunchParams());
-  console.log(retrieveLaunchParams());
+} catch (error) {
+  console.log("wow", error);
 }
 
 let trackerId = "";
@@ -73,10 +88,10 @@ export default function App() {
   );
   const {
     register,
-    handleSubmit,
+    // handleSubmit,
     watch,
     control,
-    setError,
+    // setError,
     getValues,
     formState: { errors },
   } = useForm({
@@ -95,43 +110,71 @@ export default function App() {
   return (
     <>
       <form
-        onSubmit={handleSubmit(async (data) => {
-          console.log(initDataRaw);
-          const response = await fetch(
-            `${serverUrl}/tracker/${trackerId ? trackerId : ""}`,
-            {
-              method: trackerId ? "PATCH" : "POST",
-              body: JSON.stringify({ filters: data }),
-              headers: {
-                authorization: `tma ${initDataRaw}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const responseData = await response.json();
+        // onSubmit={handleSubmit(async (data) => {
+        //   try {
+        //     const response = await fetch(
+        //       `${serverUrl}/tracker/${trackerId ? trackerId : ""}`,
+        //       {
+        //         method: trackerId ? "PATCH" : "POST",
+        //         body: JSON.stringify({ filters: data }),
+        //         headers: {
+        //           authorization: `tma ${initDataRaw}`,
+        //           "Content-Type": "application/json",
+        //         },
+        //       }
+        //     );
+        //     console.log({ response });
+        //     const responseData = await response.json();
 
-          if (Array.isArray(responseData.errors)) {
-            responseData.errors.forEach(
-              (error: { field: string; message: string }) => {
-                setError(
-                  error.field as keyof typeof formDefaultValues,
-                  {
-                    message: error.message,
-                  },
-                  { shouldFocus: true }
-                );
-              }
-            );
-          }
-          console.log({ response, responseData });
-        })}
+        //     if (Array.isArray(responseData.errors)) {
+        //       responseData.errors.forEach(
+        //         (error: { field: string; message: string }) => {
+        //           setError(
+        //             error.field as keyof typeof formDefaultValues,
+        //             {
+        //               message: error.message,
+        //             },
+        //             { shouldFocus: true }
+        //           );
+        //         }
+        //       );
+        //     }
+        //   } catch (error) {
+        //     console.log("error", error);
+        //   }
+        // })}
         style={{
           width: "100%",
           display: "flex",
           flexDirection: "column",
           gap: "24px",
           padding: "2rem 2rem",
+          paddingBottom: "6rem",
           marginTop: "100px",
+        }}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const data = getValues();
+          console.log(
+            "submitting",
+            { data, trackerId, axios },
+            `${serverUrl}/tracker/${trackerId ? trackerId : ""}`
+          );
+          try {
+            const response = await axios({
+              method: trackerId ? "PATCH" : "POST",
+              url: `${serverUrl}/tracker/${trackerId ? trackerId : ""}`,
+              data: { filters: data },
+              headers: {
+                authorization: `tma ${initDataRaw}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            console.log("Response Data:", response.data);
+          } catch (error) {
+            console.log("Axios Error:", error as Error);
+          }
         }}
       >
         <FormSection id="intro-section">
@@ -577,16 +620,7 @@ export default function App() {
         </FormSection>
         {/* End of Extra filters Section*/}
         {!!initDataRaw && (
-          <div
-            style={{
-              padding: "2rem 4rem",
-              backgroundColor: "rgba(0, 0, 255, 1)",
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-            }}
-          >
+          <div className="footer">
             <Button
               variant="contained"
               sx={{ padding: "0.5rem 0", width: "100%" }}
